@@ -14,23 +14,11 @@
 struct HexCellPiece
 {
    SpotType m_eType;
-   int m_bRevealed;
-   union
-   {
-      ValueDetails m_eDetail;//Used by bombs and not bombs
-      struct {//used by indicator types only
-         IndicatorOrientation m_eOrientations:8;//bitfields:
-         //Bit index
-         //0: Left
-         //1: Top-Left
-         //2: Top
-         //3: Top-Right
-         //4: Right
-         //5: Bottom Right
-         //6: Bottom
-         //7: Bottom Left
-         ValueDetails m_eDetails[8];
-      };
+   int m_bRevealed;//Used by bombs, not bombs, indicators(already revealed), and unknowns
+   int m_nValue;//Used by bombs, not bombs, indicators, and unknowns.  Normal bombs and unknowns are initially -1
+   ValueDetails m_eDetail;//Used by bombs, not bombs, indicators, and unknowns
+   struct {//used by indicator types only
+      IndicatorOrientation m_eOrientation;
    };
 };
 
@@ -46,7 +34,7 @@ struct HexCells
    int m_nLastError;
    int m_nTimeElapsed;
    int m_nMistakesMade;
-   int m_nBombsRemaining;
+   int m_nBombsRemaining;//Not revealed yet
    struct HexCellsBoard* m_pBoard;
    //Message string
    //About string
@@ -91,7 +79,7 @@ struct HexCellPiece* GetPieceAtSpot(struct HexCellsBoard* pBoard, int nX, int nY
    return pPiece;
 }
 
-int CountBombs(struct HexCellsBoard* pBoard)
+int CountBombsNotRevealed(struct HexCellsBoard* pBoard)
 {
    struct HexCellPiece* pPiece = NULL;
    int x,y;
@@ -105,7 +93,7 @@ int CountBombs(struct HexCellsBoard* pBoard)
 
    for(x=0; x<pBoard->m_nWidth; x++)
       for(y=0; y<pBoard->m_nHeight; y++)
-         if( GetPieceAtSpot(pBoard, x, y)->m_eType == Bomb )
+         if( GetPieceAtSpot(pBoard, x, y)->m_eType == Bomb && GetPieceAtSpot(pBoard, x, y)->m_bRevealed == HEXCELLS_NOT_REVEALED )
             nCount++;
 
    return nCount;
@@ -339,50 +327,72 @@ int GetIndicatorValue(struct HexCellsBoard* pBoard, int nX, int nY, IndicatorOri
       assert(0);
    }
 
-   nPosX = nX;
-   nPosY = nY;
-   while(1) {
-      struct HexCellPiece* pPiece;
-      nPosX += dX;
-      nPosY += dY;
+   if( GetPieceAtSpot(pBoard, nX, nY)->m_nValue >= 0 ) {
+      nCount = GetPieceAtSpot(pBoard, nX, nY)->m_nValue;
+   }
+   else {
+      nPosX = nX;
+      nPosY = nY;
+      while(1) {
+         struct HexCellPiece* pPiece;
+         nPosX += dX;
+         nPosY += dY;
 
-      if( nPosX < 0 || nPosX >= pBoard->m_nWidth || nPosY < 0 || nPosY >= pBoard->m_nHeight )
-         break;
+         if( nPosX < 0 || nPosX >= pBoard->m_nWidth || nPosY < 0 || nPosY >= pBoard->m_nHeight )
+            break;
 
-      pPiece = GetPieceAtSpot(pBoard, nPosX, nPosY);
+         pPiece = GetPieceAtSpot(pBoard, nPosX, nPosY);
 
-      if( pPiece->m_eType == Bomb ) {
-         nStartedBombs = 1;
-         nCount++;
-      }
+         if( pPiece->m_eType == Bomb ) {
+            nStartedBombs = 1;
+            nCount++;
+         }
 
-      if( pPiece->m_eType == NotBomb && nStartedBombs == 1 ) {
-         nSeparator = 1;
+         if( pPiece->m_eType == NotBomb && nStartedBombs == 1 ) {
+            nSeparator = 1;
+         }
       }
    }
 
    if( peDetails ) {
       struct HexCellPiece* pPiece = GetPieceAtSpot(pBoard, nX, nY);
-      if( pPiece->m_eDetails[IndexOfDirection(eDirection)] == HasNumber ) {
-         *peDetails = HasNumber;
-      }
-      /*else if( pPiece->m_eDetails == Question ) {//If I wanted to make the indicator a '?'; but for now I just don't have that indicator
-         *peDetails = Question;
-      }*/
-      else if( pPiece->m_eDetails[IndexOfDirection(eDirection)] == Consecutive ) {
-         *peDetails = Consecutive;
-      }
-      else if( pPiece->m_eDetails[IndexOfDirection(eDirection)] == NotConsecutive ) {
-         *peDetails = NotConsecutive;
-      }
-      else {
-         assert(0);
-      }
+      *peDetails = pPiece->m_eDetail;
 
       assert( *peDetails != Question );//Not exposing concealed for indicators
    }
 
    return nCount;
+}
+
+void UpdateValues(struct HexCellsBoard* pBoard)
+{
+   struct HexCellPiece* pPiece = NULL;
+   int x, y;
+   DEBUG_FUNC_NAME;
+
+   if (pBoard == NULL) {
+      assert(0);
+   }
+
+   for (x = 0; x<pBoard->m_nWidth; x++) {
+      for (y = 0; y<pBoard->m_nHeight; y++) {
+         pPiece = GetPieceAtSpot(pBoard, x, y);
+         if (pPiece->m_eType == Indicator) {
+            pPiece->m_nValue = GetIndicatorValue(pBoard, x, y, pPiece->m_eOrientation, NULL);
+         }
+         else if (pPiece->m_eType == NotBomb) {
+            pPiece->m_nValue = GetBombsSurrounding(pBoard, x, y, 1, NULL);
+         }
+         else if (pPiece->m_eType == Bomb) {
+            pPiece->m_nValue = GetBombsSurrounding(pBoard, x, y, 2, NULL);
+         }
+         else if (pPiece->m_eType == Nothing) {
+         }
+         else {
+            assert(0);
+         }
+      }
+   }
 }
 
 int ReadInt(char** ppstr, int* pnNum)
@@ -392,9 +402,15 @@ int ReadInt(char** ppstr, int* pnNum)
    while(*pstr == ' ')
       pstr++;
    nRet = sscanf(*ppstr, "%d", pnNum);
-   if( nRet >= 0 )
-      while(*pstr != ' ')
+   if( nRet >= 0 ) {
+      pstr++;
+      if( *pstr == '\0' ) {
+         *ppstr = pstr;
+         return nRet;
+      }
+      while (*pstr != ' ')
          pstr++;
+   }
    *ppstr = pstr;
    return nRet;
 }
@@ -467,10 +483,14 @@ int HexCellsLibCreate(HexCellsLib* api, const char* pstrGameData)
 
                pPiece = GetPieceAtSpot(pBoard, nX, nY);
 
-               if( ch1 == 'o' || ch1 == 'O' )
+               pPiece->m_nValue = -1;
+
+               if( ch1 == 'o' || ch1 == 'O' ) {
                   pPiece->m_eType = NotBomb;
-               else if( ch1 == 'x' || ch1 == 'X' )
+               }
+               else if( ch1 == 'x' || ch1 == 'X' ) {
                   pPiece->m_eType = Bomb;
+               }
                else if( ch1 == '\\' || ch1 == '|' || ch1 == '/' ) {
                   pPiece->m_eType = Indicator;
                }
@@ -487,29 +507,24 @@ int HexCellsLibCreate(HexCellsLib* api, const char* pstrGameData)
                   pPiece->m_bRevealed = HEXCELLS_NOT_REVEALED;
 
                if( pPiece->m_eType == Indicator ) {
-                  int i;
-                  for(i=0; i<8; i++)
-                     pPiece->m_eDetails[i] = HasNumber;//Default
-                  pPiece->m_eOrientations = 0;
+                  pPiece->m_eDetail = HasNumber;//Default;
+                  pPiece->m_eOrientation = IO_Top;
 
                   if( ch1 == '\\' )
-                     pPiece->m_eOrientations |= 1<<6;
-                  if( ch1 == '|' )
-                     pPiece->m_eOrientations |= 1<<5;
-                  if( ch1 == '/' )
-                     pPiece->m_eOrientations |= 1<<4;
+                     pPiece->m_eOrientation = IO_TopLeft;
+                  else if( ch1 == '|' )
+                     pPiece->m_eOrientation = IO_Top;
+                  else if( ch1 == '/' )
+                     pPiece->m_eOrientation = IO_TopRight;
 
                   if( ch2 == '+' ) {
-                     for(i=0; i<8; i++)
-                        pPiece->m_eDetails[i] = HasNumber;
+                     pPiece->m_eDetail = HasNumber;
                   }
                   else if( ch2 == 'c' ) {
-                     for(i=0; i<8; i++)
-                        pPiece->m_eDetails[i] = Consecutive;
+                     pPiece->m_eDetail = Consecutive;
                   }
                   else if( ch2 == 'n' ) {
-                     for(i=0; i<8; i++)
-                        pPiece->m_eDetails[i] = NotConsecutive;
+                     pPiece->m_eDetail = NotConsecutive;
                   }
                   else {
                      assert(0);
@@ -537,6 +552,8 @@ int HexCellsLibCreate(HexCellsLib* api, const char* pstrGameData)
             nY++;
          }
       }
+      UpdateValues(pBoard);
+      pH->m_nBombsRemaining = CountBombsNotRevealed(pBoard);
    }
    else {
       pch = strstr(pstrGameData, "Hexcells 1");
@@ -544,11 +561,12 @@ int HexCellsLibCreate(HexCellsLib* api, const char* pstrGameData)
          int x,y;
          char* pstr = (char*)pstrGameData;
          pstr += strlen("Hexcells 1");
-         int nMistakesMade, nBoardWidth, nBoardHeight;
+         int nMistakesMade, nBoardWidth, nBoardHeight, nBombsNotRevealed;
 
          ReadInt(&pstr, &nMistakesMade);
          ReadInt(&pstr, &nBoardWidth);
          ReadInt(&pstr, &nBoardHeight);
+         ReadInt(&pstr, &nBombsNotRevealed);
 
          pH->m_nMistakesMade = nMistakesMade;
          pBoard->m_nWidth = nBoardWidth;
@@ -579,38 +597,36 @@ int HexCellsLibCreate(HexCellsLib* api, const char* pstrGameData)
             pPiece->m_eType = nType;
 
             ReadInt(&pstr, &pPiece->m_bRevealed);
+            assert( pPiece->m_bRevealed == HEXCELLS_IS_REVEALED || pPiece->m_bRevealed == HEXCELLS_NOT_REVEALED );
+
+            ReadInt(&pstr, &pPiece->m_nValue);
+            assert( pPiece->m_nValue >= -1 );
+
+            int nDetails;
+            ReadInt(&pstr, &nDetails);
+            pPiece->m_eDetail = nDetails;
 
             if( pPiece->m_eType == Bomb || pPiece->m_eType == NotBomb ) {
-               int nDetails;
-               ReadInt(&pstr, &nDetails);
-               pPiece->m_eDetail = nDetails;
             }
             else if( pPiece->m_eType == Indicator ) {
-               int i;
-               int nOrientations;
-               ReadInt(&pstr, &nOrientations);
-               pPiece->m_eOrientations = nOrientations;
-
-               for(i=0; i<8; i++) {
-                  int nDetails;
-                  ReadInt(&pstr, &nDetails);
-                  pPiece->m_eDetails[i] = nDetails;
-               }
+               int nOrientation;
+               ReadInt(&pstr, &nOrientation);
+               pPiece->m_eOrientation = nOrientation;
             }
             else if( pPiece->m_eType == Unknown ) {
-               int nDetails;
-               ReadInt(&pstr, &nDetails);
-               pPiece->m_eDetail = nDetails;
             }
             else {
                assert(0);//Not finished yet.
             }
 
+            if( *pstr == '\0' ) {
+               break;
+            }
          }
+
+         pH->m_nBombsRemaining = nBombsNotRevealed;
       }
    }
-
-   pH->m_nBombsRemaining = CountBombs(pBoard);
 
    pH->m_nLastError = HEXCELLSLIB_OK;
 
@@ -694,19 +710,17 @@ int HexCellsSave(HexCellsLib api, char* pstr)
          sprintf(buffer, "%d ", pPiece->m_bRevealed);
          strcat(pstr, buffer);
 
-         if( pPiece->m_eType == Bomb || pPiece->m_eType == NotBomb ) {
-            sprintf(buffer, "%d ", pPiece->m_eDetail);
+         sprintf(buffer, "%d ", pPiece->m_nValue);
+         strcat(pstr, buffer);
+
+         sprintf(buffer, "%d ", pPiece->m_eDetail);
+         strcat(pstr, buffer);
+
+         if( pPiece->m_eType == Indicator ) {
+            sprintf(buffer, "%d ", pPiece->m_eOrientation);
             strcat(pstr, buffer);
          }
-         else if( pPiece->m_eType == Indicator ) {
-            int i;
-            sprintf(buffer, "%d ", pPiece->m_eOrientations);
-            strcat(pstr, buffer);
-
-            for(i=0; i<8; i++) {
-               sprintf(buffer, "%d ", pPiece->m_eDetails[i]);
-               strcat(pstr, buffer);
-            }
+         else if (pPiece->m_eType == Bomb || pPiece->m_eType == NotBomb) {
          }
          else {
             assert(0);//Doesn't know about Unknowns yet
@@ -728,7 +742,7 @@ int HexCellsIsGameOver(HexCellsLib api)
 
    for(x=0; x<pH->m_pBoard->m_nWidth; x++)
       for(y=0; y<pH->m_pBoard->m_nHeight; y++)
-         if( GetPieceAtSpot(pH->m_pBoard, x, y)->m_eType == Bomb || GetPieceAtSpot(pH->m_pBoard, x, y)->m_eType == NotBomb )
+         if( GetPieceAtSpot(pH->m_pBoard, x, y)->m_eType == Bomb || GetPieceAtSpot(pH->m_pBoard, x, y)->m_eType == NotBomb || GetPieceAtSpot(pH->m_pBoard, x, y)->m_eType == Unknown )
             if( HexCellsIsRevealedSpot(api, x, y) == HEXCELLS_NOT_REVEALED )
                return HEXCELLS_NOT_GAMEOVER;
 
@@ -797,6 +811,13 @@ int HexCellsGetRevealedSpotValue(HexCellsLib api, int nX, int nY, int* pnValue, 
       return HEXCELLSLIB_BADARGUMENT;
 
    if( pnValue ) {
+      if( pPiece->m_nValue >= 0 ) {
+         *pnValue = pPiece->m_nValue;
+         if( peDetails )
+            *peDetails = pPiece->m_eDetail;
+         return HEXCELLSLIB_OK;
+      }
+
       if( pPiece->m_eDetail == Question ) {
          *pnValue = -1;//
          if( peDetails )
@@ -816,7 +837,7 @@ int HexCellsGetRevealedSpotValue(HexCellsLib api, int nX, int nY, int* pnValue, 
    return HEXCELLSLIB_OK;
 }
 
-int HexCellsGetIndicatorDirection(HexCellsLib api, int nX, int nY, IndicatorOrientation* peDirections)
+int HexCellsGetIndicatorDirection(HexCellsLib api, int nX, int nY, IndicatorOrientation* peDirection)
 {
    struct HexCells* pH;
    DEBUG_FUNC_NAME;
@@ -828,8 +849,8 @@ int HexCellsGetIndicatorDirection(HexCellsLib api, int nX, int nY, IndicatorOrie
       return HEXCELLSLIB_BADARGUMENT;
    }
 
-   if( peDirections ) {
-      *peDirections = GetPieceAtSpot(pH->m_pBoard, nX, nY)->m_eOrientations;
+   if( peDirection ) {
+      *peDirection = GetPieceAtSpot(pH->m_pBoard, nX, nY)->m_eOrientation;
    }
 
    return HEXCELLSLIB_OK;
@@ -861,7 +882,7 @@ int HexCellsIsRevealedSpot(HexCellsLib api, int nX, int nY)
 
    pH = (struct HexCells*)api;
 
-   if( GetPieceAtSpot(pH->m_pBoard, nX, nY)->m_eType != Bomb && GetPieceAtSpot(pH->m_pBoard, nX, nY)->m_eType != NotBomb ) {
+   if( GetPieceAtSpot(pH->m_pBoard, nX, nY)->m_eType != Bomb && GetPieceAtSpot(pH->m_pBoard, nX, nY)->m_eType != NotBomb && GetPieceAtSpot(pH->m_pBoard, nX, nY)->m_eType != Unknown ) {
       assert(0);
       return HEXCELLS_NOT_REVEALED;
    }
@@ -886,8 +907,7 @@ int HexCellsRevealAs(HexCellsLib api, int nX, int nY, int nAsBomb)
 
    //TODO: Keep undo history :)
    if( eType == Unknown ) {
-      //TODO: Add in unknown functionality :)
-      assert(0);
+      assert(0);//Use HexCellsUnknownRevealAs
    }
    if( (eType == Bomb && nAsBomb == 1) || (eType == NotBomb && nAsBomb == 0) ) {
       GetPieceAtSpot(pH->m_pBoard, nX, nY)->m_bRevealed = HEXCELLS_IS_REVEALED;
@@ -895,5 +915,28 @@ int HexCellsRevealAs(HexCellsLib api, int nX, int nY, int nAsBomb)
    }
 
    return HEXCELLS_INCORRECT;
+}
+
+int HexCellsUnknownRevealAs(HexCellsLib api, int nX, int nY, int nAsBomb, ValueDetails eDetails, int nValue)
+{
+   struct HexCells* pH;
+   struct HexCellPiece* pPiece;
+   DEBUG_FUNC_NAME;
+
+   pH = (struct HexCells*)api;
+   pPiece = GetPieceAtSpot(pH->m_pBoard, nX, nY);
+
+   assert( pPiece->m_eType == Unknown );
+   if( pPiece->m_eType != Unknown )
+      return HEXCELLSLIB_BADARGUMENT;
+
+   pPiece->m_bRevealed = HEXCELLS_IS_REVEALED;
+   pPiece->m_eDetail = eDetails;
+   pPiece->m_eType = nAsBomb == HEXCELLS_REVEAL_BOMB ? Bomb : NotBomb;
+   pPiece->m_nValue = nValue;
+
+   assert(pPiece->m_nValue >= -1);
+
+   return HEXCELLSLIB_OK;
 }
 

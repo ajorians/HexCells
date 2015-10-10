@@ -29,7 +29,7 @@ typedef enum {
 
 typedef enum {
    HasNumber,//Also used with bombs and their 2x radius
-   Question,
+   Question,//Also used with bombs to mean normal bomb
    Consecutive,
    NotConsecutive
 } ValueDetails;
@@ -65,11 +65,13 @@ int HexCellsGetHeight(HexCellsLib api);
 int HexCellsGetBombsRemaining(HexCellsLib api);
 int HexCellGetSpotType(HexCellsLib api, int nX, int nY, SpotType* peType);
 int HexCellsGetRevealedSpotValue(HexCellsLib api, int nX, int nY, int* pnValue, ValueDetails* peDetails);
-int HexCellsGetIndicatorDirection(HexCellsLib api, int nX, int nY, IndicatorOrientation* peDirections);
+int HexCellsGetIndicatorDirection(HexCellsLib api, int nX, int nY, IndicatorOrientation* peDirection);
 int HexCellsGetIndicatorValue(HexCellsLib api, int nX, int nY, IndicatorOrientation eDirection, int* pnValue, ValueDetails* peDetails);
 
 int HexCellsIsRevealedSpot(HexCellsLib api, int nX, int nY);
 int HexCellsRevealAs(HexCellsLib api, int nX, int nY, int nAsBomb);
+
+int HexCellsUnknownRevealAs(HexCellsLib api, int nX, int nY, int nAsBomb, ValueDetails eDetails, int nValue);
 
 
 #endif
