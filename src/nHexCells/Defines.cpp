@@ -1,7 +1,7 @@
 #include "Defines.h"
 
-int Puz_Min(int a, int b) { return a<b ? a : b; }
-int Puz_Max(int a, int b) { return a>b ? a : b; }
+int min(int a, int b) { return a<b ? a : b; }
+int max(int a, int b) { return a>b ? a : b; }
 
 Uint16 get_pixel16(SDL_Surface *surface, int x, int y)
 {

@@ -10,6 +10,10 @@ extern "C"
 }
 
 #ifndef _TINSPIRE
+#include <cassert>
+#endif
+
+#ifndef _TINSPIRE
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
 #endif
@@ -30,12 +34,20 @@ extern "C"
 #define MESSAGE_BACKGROUND_G     (255)
 #define MESSAGE_BACKGROUND_B     (207)
 
-int Puz_Min(int a, int b);
-int Puz_Max(int a, int b);
+int min(int a, int b);
+int max(int a, int b);
 
 void draw_rectangle(SDL_Surface* Surface, Uint32 color, Uint16 x, Uint16 y, Uint16 width, Uint16 height, Uint8 lnpx);
 
 Uint16 get_pixel16(SDL_Surface *surface, int x, int y);
 void put_pixel16(SDL_Surface *surface, int x, int y, Uint16 pixel);
+
+#ifndef ASSERT
+#ifdef _TINSPIRE
+#define ASSERT
+#else
+#define ASSERT assert
+#endif
+#endif
 
 #endif

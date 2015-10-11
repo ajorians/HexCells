@@ -74,13 +74,14 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)\SDL-1.2.15-Win\include;$(ProjectDir)\SDL-1.2.15-Win\include\SDL;$(ProjectDir)\SDL_ttf-2.0.11-Win\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)/Include/;$(ProjectDir)\SDL-1.2.15-Win\include;$(ProjectDir)\SDL-1.2.15-Win\include\SDL;$(ProjectDir)\SDL_ttf-2.0.11-Win\include;$(ProjectDir)\SDL_gfx-Win\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)\SDL-1.2.15-Win\lib\x86;$(ProjectDir)\SDL_ttf-2.0.11-Win\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SDL.lib;SDLmain.lib;SDL_ttf.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)\SDL-1.2.15-Win\lib\x86;$(ProjectDir)\SDL_ttf-2.0.11-Win\lib\x86;$(ProjectDir)\SDL_gfx-Win\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL.lib;SDLmain.lib;SDL_ttf.lib;SDL_gfx.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>
       </EntryPointSymbol>
       <SubSystem>Console</SubSystem>
@@ -91,13 +92,14 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)\SDL-1.2.15-Win\include;$(ProjectDir)\SDL-1.2.15-Win\include\SDL;$(ProjectDir)\SDL_ttf-2.0.11-Win\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)/Include/;$(ProjectDir)\SDL-1.2.15-Win\include;$(ProjectDir)\SDL-1.2.15-Win\include\SDL;$(ProjectDir)\SDL_ttf-2.0.11-Win\include;$(ProjectDir)\SDL_gfx-Win\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)\SDL-1.2.15-Win\lib\x64;$(ProjectDir)\SDL_ttf-2.0.11-Win\lib\x86</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SDL.lib;SDLmain.lib;SDL_ttf.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)\SDL-1.2.15-Win\lib\x64;$(ProjectDir)\SDL_ttf-2.0.11-Win\lib\x64;$(ProjectDir)\SDL_gfx-Win\lib\x64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL.lib;SDLmain.lib;SDL_ttf.lib;SDL_gfx.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>
       </EntryPointSymbol>
       <SubSystem>Console</SubSystem>
@@ -110,14 +112,15 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)\SDL-1.2.15-Win\include;$(ProjectDir)\SDL-1.2.15-Win\include\SDL;$(ProjectDir)\SDL_ttf-2.0.11-Win\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)/Include/;$(ProjectDir)\SDL-1.2.15-Win\include;$(ProjectDir)\SDL-1.2.15-Win\include\SDL;$(ProjectDir)\SDL_ttf-2.0.11-Win\include;$(ProjectDir)\SDL_gfx-Win\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(ProjectDir)\SDL-1.2.15-Win\lib\x86;$(ProjectDir)\SDL_ttf-2.0.11-Win\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SDL.lib;SDLmain.lib;SDL_ttf.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)\SDL-1.2.15-Win\lib\x86;$(ProjectDir)\SDL_ttf-2.0.11-Win\lib\x86;$(ProjectDir)\SDL_gfx-Win\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL.lib;SDLmain.lib;SDL_ttf.lib;SDL_gfx.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>
       </EntryPointSymbol>
       <SubSystem>Windows</SubSystem>
@@ -130,28 +133,40 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)\SDL-1.2.15-Win\include;$(ProjectDir)\SDL-1.2.15-Win\include\SDL;$(ProjectDir)\SDL_ttf-2.0.11-Win\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)/Include/;$(ProjectDir)\SDL-1.2.15-Win\include;$(ProjectDir)\SDL-1.2.15-Win\include\SDL;$(ProjectDir)\SDL_ttf-2.0.11-Win\include;$(ProjectDir)\SDL_gfx-Win\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(ProjectDir)\SDL-1.2.15-Win\lib\x64;$(ProjectDir)\SDL_ttf-2.0.11-Win\lib\x86</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SDL.lib;SDLmain.lib;SDL_ttf.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)\SDL-1.2.15-Win\lib\x64;$(ProjectDir)\SDL_ttf-2.0.11-Win\lib\x64;$(ProjectDir)\SDL_gfx-Win\lib\x64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL.lib;SDLmain.lib;SDL_ttf.lib;SDL_gfx.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>
       </EntryPointSymbol>
       <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Config.cpp" />
     <ClCompile Include="Defines.cpp" />
+    <ClCompile Include="Game.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Menu.cpp" />
+    <ClCompile Include="Metrics.cpp" />
     <ClCompile Include="SDL_Replacements.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Config.h" />
+    <ClInclude Include="Game.h" />
     <ClInclude Include="Menu.h" />
+    <ClInclude Include="Metrics.h" />
     <ClInclude Include="SDL_Replacements.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HexCellsLib\HexCellsLib.vcxproj">
+      <Project>{4e67f835-532a-47bf-a2f1-2e1d0b544ea8}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

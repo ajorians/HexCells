@@ -12,9 +12,9 @@ extern "C"
 
 #include "Menu.h"
 //#include "Achievements.h"
-//#include "Game.h"
+#include "Game.h"
 //#include "CardImages.h"
-//#include "Config.h"
+#include "Config.h"
 //#include "Options.h"
 //#include "AchieveConfig.h"
 //#include "Help.h"
@@ -89,33 +89,33 @@ int main(int argc, char *argv[])
             bShowAchievements = menu.ShouldShowAchievements();
          }
 
-         /*if (bShowOptions) {
-            Options ops(pScreen, &config);
-            while (ops.Loop()) {}
+         if (bShowOptions) {
+            /*Options ops(pScreen, &config);
+            while (ops.Loop()) {}*/
             continue;
          }
          else if (bShowAchievements) {
-            Achievements ach(pScreen, &ac);
-            while (ach.Loop()) {}
+            /*Achievements ach(pScreen, &ac);
+            while (ach.Loop()) {}*/
             continue;
          }
          else if (bShowHelp)
          {
-            HeartsHelp help(pScreen);
-            while (help.Loop()) {}
+            /*HeartsHelp help(pScreen);
+            while (help.Loop()) {}*/
             continue;
          }
          else
          {
             bool bPlay = true;
             while (bPlay) {
-               Game game(pScreen, &config, &ac, &cardImages);
+               Game game(pScreen, NULL, NULL);//&config, &ac, &cardImages);
                while (game.Loop()) {}
 
                bPlay = false;
                break;
             }
-         }*/
+         }
       }
    }
 

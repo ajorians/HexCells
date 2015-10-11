@@ -7,5 +7,6 @@ void SDLDrawText(SDL_Surface* pSurface, FONT* pFont, int x, int y, char* pstr )
    offset.x = x;
    offset.y = y;
    SDL_BlitSurface(pMessage, NULL, pSurface, &offset);
+   SDL_FreeSurface(pMessage);
 }
 
