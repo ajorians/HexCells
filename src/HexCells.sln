@@ -3,12 +3,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HexCells", "HexCells/HexCells.vcxproj", "{EBBB40B9-FB3F-4DCC-9208-80A5FECF31F4}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HexCellsLibTest", "HexCells\HexCells.vcxproj", "{EBBB40B9-FB3F-4DCC-9208-80A5FECF31F4}"
 	ProjectSection(ProjectDependencies) = postProject
 		{4E67F835-532A-47BF-A2F1-2E1D0B544EA8} = {4E67F835-532A-47BF-A2F1-2E1D0B544EA8}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HexCellsLib", "HexCellsLib\HexCellsLib.vcxproj", "{4E67F835-532A-47BF-A2F1-2E1D0B544EA8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nHexCells", "nHexCells\nHexCells.vcxproj", "{41E48850-B9B7-4C68-9B26-836F40D485BD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -34,6 +36,14 @@ Global
 		{4E67F835-532A-47BF-A2F1-2E1D0B544EA8}.Release|x64.Build.0 = Release|x64
 		{4E67F835-532A-47BF-A2F1-2E1D0B544EA8}.Release|x86.ActiveCfg = Release|Win32
 		{4E67F835-532A-47BF-A2F1-2E1D0B544EA8}.Release|x86.Build.0 = Release|Win32
+		{41E48850-B9B7-4C68-9B26-836F40D485BD}.Debug|x64.ActiveCfg = Debug|x64
+		{41E48850-B9B7-4C68-9B26-836F40D485BD}.Debug|x64.Build.0 = Debug|x64
+		{41E48850-B9B7-4C68-9B26-836F40D485BD}.Debug|x86.ActiveCfg = Debug|Win32
+		{41E48850-B9B7-4C68-9B26-836F40D485BD}.Debug|x86.Build.0 = Debug|Win32
+		{41E48850-B9B7-4C68-9B26-836F40D485BD}.Release|x64.ActiveCfg = Release|x64
+		{41E48850-B9B7-4C68-9B26-836F40D485BD}.Release|x64.Build.0 = Release|x64
+		{41E48850-B9B7-4C68-9B26-836F40D485BD}.Release|x86.ActiveCfg = Release|Win32
+		{41E48850-B9B7-4C68-9B26-836F40D485BD}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
