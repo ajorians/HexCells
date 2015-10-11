@@ -15,7 +15,7 @@ extern "C"
 #include "Metrics.h"
 //#include "Piece.h"
 //#include "Message.h"
-//#include "Direction.h"
+#include "Direction.h"
 #include "SDL_Replacements.h"
 
 class Config;
@@ -32,16 +32,14 @@ public:
 protected:
    bool PollEvents();
    void UpdateDisplay();
-   /*void Move(Direction eDirection);
-   void SelectCard();
-   void DoGamePlay();
-   void RemovedSelectedPieces();
-   void RebuildPieces();
-   void ConstructAIs();*/
+   void Move(Direction eDirection);
+   void DetermineBomb();
+   void DetermineClear();
 
 protected:
    void DrawCell(int nX, int nY);
    void DrawBorder(int nX, int nY);
+   void DrawSelector(int nX, int nY);
 
 protected:
    SDL_Surface	*m_pScreen;//Does not own
@@ -50,6 +48,8 @@ protected:
    FONT *m_pFont;
    HexCellsLib m_HexCells;
    Metrics		m_Metrics;
+   int         m_nCurrentX;
+   int         m_nCurrentY;
    //Message		m_ShotMoonMessage;*/
 };
 

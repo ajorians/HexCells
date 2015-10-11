@@ -34,7 +34,7 @@ extern "C"
 7 4 2 1 0 0"
 
 Game::Game(SDL_Surface* pScreen, Config* pConfig, AchieveConfig* pAchieve)
-   : m_pScreen(pScreen), m_pConfig(pConfig), m_pAchieve(pAchieve)
+   : m_pScreen(pScreen), m_pConfig(pConfig), m_pAchieve(pAchieve), m_nCurrentX(0), m_nCurrentY(0)
 {
    HexCellsLibCreate(&m_HexCells, NEW_GAME_DATA);
 
@@ -96,22 +96,32 @@ bool Game::PollEvents()
       case SDLK_RETURN:
       case SDLK_LCTRL:
       case SDLK_RCTRL:
-      //SelectCard();
+      DetermineBomb();
       break;
 
       case SDLK_RIGHT:
       case SDLK_6:
-      //Move(Right);
+      Move(Right);
       break;
 
       case SDLK_LEFT:
       case SDLK_4:
-      //Move(Left);
+      Move(Left);
+      break;
+
+      case SDLK_UP:
+      case SDLK_8:
+      Move(Up);
+      break;
+
+      case SDLK_DOWN:
+      case SDLK_2:
+      Move(Down);
       break;
 
       case SDLK_CLEAR:
       case SDLK_BACKSPACE:
-      //RemovedSelectedPieces();
+      DetermineClear();
       break;
 
       default:
@@ -144,6 +154,9 @@ void Game::UpdateDisplay()
    for(int x=0; x<nWidth; x++) {
       for(int y=0; y<nHeight; y++) {
          DrawCell(x, y);
+
+         if( m_nCurrentX == x && m_nCurrentY == y )
+            DrawSelector(x, y);
       }
    }
 
@@ -170,13 +183,13 @@ void Game::DrawCell(int nX, int nY)
       _itoa(nValue, buffer, 10);
 #endif
       //TODO: Check if continous/flags
-      DRAWTEXT(m_pScreen, m_pFont, m_Metrics.GetLeftForPiece(nX, nY), m_Metrics.GetTopForPiece(nX, nY), buffer);
+      DRAWTEXT(m_pScreen, m_pFont, m_Metrics.GetLeftForPiece(nX, nY) + m_Metrics.GetPieceSize()/2, m_Metrics.GetTopForPiece(nX, nY) + m_Metrics.GetPieceSize()/2, buffer);
    }
    else if (eType == Bomb || eType == NotBomb) {
       DrawBorder(nX, nY);
       ASSERT(HEXCELLS_IS_REVEALED == HexCellsIsRevealedSpot(m_HexCells, nX, nY));
       if (eType == Bomb) {
-         DRAWTEXT(m_pScreen, m_pFont, m_Metrics.GetLeftForPiece(nX, nY), m_Metrics.GetTopForPiece(nX, nY), "B");
+         DRAWTEXT(m_pScreen, m_pFont, m_Metrics.GetLeftForPiece(nX, nY) + m_Metrics.GetPieceSize()/2, m_Metrics.GetTopForPiece(nX, nY) + m_Metrics.GetPieceSize()/2, "B");
       }
       else {
          char buffer[8];
@@ -189,12 +202,12 @@ void Game::DrawCell(int nX, int nY)
          _itoa(nValue, buffer, 10);
 #endif
 
-         DRAWTEXT(m_pScreen, m_pFont, m_Metrics.GetLeftForPiece(nX, nY), m_Metrics.GetTopForPiece(nX, nY), buffer);
+         DRAWTEXT(m_pScreen, m_pFont, m_Metrics.GetLeftForPiece(nX, nY) + m_Metrics.GetPieceSize()/2, m_Metrics.GetTopForPiece(nX, nY) + m_Metrics.GetPieceSize()/2, buffer);
       }
    }
    else if (eType == Unknown) {
       DrawBorder(nX, nY);
-      DRAWTEXT(m_pScreen, m_pFont, m_Metrics.GetLeftForPiece(nX, nY), m_Metrics.GetTopForPiece(nX, nY), "U");
+      //DRAWTEXT(m_pScreen, m_pFont, m_Metrics.GetLeftForPiece(nX, nY) + m_Metrics.GetPieceSize()/2, m_Metrics.GetTopForPiece(nX, nY) + m_Metrics.GetPieceSize()/2, "U");
    }
    else {
       ASSERT(0);
@@ -203,122 +216,87 @@ void Game::DrawCell(int nX, int nY)
 
 void Game::DrawBorder(int nX, int nY)
 {
-   int nLeft = m_Metrics.GetLeftForPiece(nX, nY);
-   int nTop = m_Metrics.GetTopForPiece(nX, nY);
-   int nPieceSize = m_Metrics.GetPieceSize();
+   short nLeft = m_Metrics.GetLeftForPiece(nX, nY);
+   short nTop = m_Metrics.GetTopForPiece(nX, nY);
+   short nPieceSize = m_Metrics.GetPieceSize();
 
-   short s[] = { nLeft+nPieceSize/2,   nLeft + nPieceSize,  nLeft + nPieceSize,     nLeft+nPieceSize/2,  nLeft,                  nLeft };
-   short t[] = { nTop,                 nTop + nPieceSize/3, nTop + 2*nPieceSize/3,  nTop + nPieceSize,   nTop +2*nPieceSize/3,   nTop + nPieceSize/3 };
+   {
+   short s[] = { nLeft,                nLeft + nPieceSize/4,   nLeft + 3*nPieceSize/4, nLeft+nPieceSize,    nLeft+3*nPieceSize/4,   nLeft + nPieceSize/4 };
+   short t[] = { nTop + nPieceSize/2,  nTop,                   nTop,                   nTop + nPieceSize/2, nTop + nPieceSize,      nTop + nPieceSize    };
 
    filledPolygonRGBA(m_pScreen,
                      s, t,
                      6,
                      255, 0, 0, 255);
+   }
+
+   {
+      const short nSmallAmount = Metrics::GetGapAmount();
+      short s[] = { nLeft + nSmallAmount, nLeft + nPieceSize/4,   nLeft + 3*nPieceSize/4, nLeft+nPieceSize - nSmallAmount,    nLeft+3*nPieceSize/4,               nLeft + nPieceSize/4 };
+      short t[] = { nTop + nPieceSize/2,  nTop + 4*nSmallAmount/2,    nTop + 4*nSmallAmount/2,    nTop + nPieceSize/2,                nTop + nPieceSize - 4*nSmallAmount/2,   nTop + nPieceSize - 4*nSmallAmount/2 };
+
+      filledPolygonRGBA(m_pScreen,
+                        s, t,
+                        6,
+                        255, 255, 0, 255);
+   }
 }
 
-//void Game::Move(Direction eDirection)
-//{
-//   int nNumCards = GetNumberOfCardsInHand(m_Hearts, 0);
-//   if (eDirection == Left) {
-//      m_nCurrentCard--;
-//   }
-//   else if (eDirection == Right) {
-//      m_nCurrentCard++;
-//   }
-//
-//   if (m_nCurrentCard < 0) {
-//      m_nCurrentCard = nNumCards-1;
-//   }
-//   else if (m_nCurrentCard >= nNumCards) {
-//      m_nCurrentCard = 0;
-//   }
-//}
-//
-//void Game::SelectCard()
-//{
-//   if (HasPassedCards(m_Hearts) == HEARTSLIB_NOT_PASSED_CARDS) {
-//      ToggleSelectedCard(m_Hearts, 0, m_nCurrentCard);
-//      if (GetNumberSelectedCards(m_Hearts, 0) == 3) {
-//         PassSelectedCards(m_Hearts, 0);
-//
-//         for (int i = 1; i<4; i++) {
-//            int nIndex1, nIndex2, nIndex3;
-//            HeartsAIDesiredPassIndexes(m_aAIs[i-1], &nIndex1, &nIndex2, &nIndex3);
-//            ToggleSelectedCard(m_Hearts, i, nIndex1);
-//            ToggleSelectedCard(m_Hearts, i, nIndex2);
-//            ToggleSelectedCard(m_Hearts, i, nIndex3);
-//
-//            PassSelectedCards(m_Hearts, i);
-//         }
-//      }
-//   }
-//   else {
-//      PlayCard(m_Hearts, 0, m_nCurrentCard);
-//   }
-//}
-//
-//void Game::DoGamePlay()
-//{
-//   if (SDL_GetTicks() - m_uLastAction < 1000)
-//      return;
-//
-//   if (HasPassedCards(m_Hearts) == HEARTSLIB_PASSED_CARDS) {
-//      if (HasEverybodyPlayedTheirCard(m_Hearts)) {
-//         int nPlayerIndex;
-//         FigureOutWhoTakesTrick(m_Hearts, &nPlayerIndex);
-//         int nNumCardsInMiddle = GetNumberOfCardsInMiddle(m_Hearts);
-//         for (int nCard = 0; nCard < nNumCardsInMiddle; nCard++) {
-//            Card c;
-//            GetMiddleCard(m_Hearts, &c, nCard, NULL);
-//            m_Pieces.MoveCard(c, m_Metrics.GetPlayerSideX(nPlayerIndex), m_Metrics.GetPlayerSideY(nPlayerIndex));
-//         }
-//         GiveTrickToPlayer(m_Hearts);
-//      }
-//      else {
-//         int nPlayersTurn = GetPlayersTurn(m_Hearts);
-//         if (nPlayersTurn != 0) {
-//            int nIndex;
-//            HeartsAIDesiredPlayIndex(m_aAIs[nPlayersTurn-1], &nIndex);
-//            PlayCard(m_Hearts, nPlayersTurn, nIndex);
-//            m_uLastAction = SDL_GetTicks();
-//         }
-//         return;//return so will check if everyone played their cards again and will give trick to player and update score
-//      }
-//   }
-//
-//   if (HasPassedCards(m_Hearts) == HEARTSLIB_PASSED_CARDS) {
-//      if (GetNumberOfCardsInHand(m_Hearts, 0) == 0 && GetNumberOfCardsInHand(m_Hearts, 1) == 0 && GetNumberOfCardsInHand(m_Hearts, 2) == 0 && GetNumberOfCardsInHand(m_Hearts, 3) == 0) {
-//         ScoreReview r(m_pScreen, &m_Hearts);
-//         while (r.Loop()) {}
-//         //m_pAchieve->LookForAchievements(m_Hearts);
-//         DoHeartsNextHand(m_Hearts);
-//         RebuildPieces();
-//      }
-//   }
-//}
-//
-//void Game::RemovedSelectedPieces()
-//{
-//   if (HasPassedCards(m_Hearts) != HEARTSLIB_PASSED_CARDS) {
-//      int nCardsInHand = GetNumberOfCardsInHand(m_Hearts, 0);
-//      for (int i = 0; i<nCardsInHand; i++) {
-//         if (IsCardSelected(m_Hearts, 0, i) == HEARTSLIB_CARD_SELECTED)
-//            ToggleSelectedCard(m_Hearts, 0, i);
-//      }
-//   }
-//}
-//
-//void Game::RebuildPieces()
-//{
-//   m_Pieces.ClearPieces();
-//   for (int nPlayerIndex = 0; nPlayerIndex<4; nPlayerIndex++) {
-//      int nNumCards = GetNumberOfCardsInHand(m_Hearts, nPlayerIndex);
-//      m_Metrics.SetNumCards(nNumCards);
-//      for (int i = 0; i<nNumCards; i++) {
-//         Card c;
-//         GetCardInHand(m_Hearts, &c, nPlayerIndex, i);
-//         m_Pieces.CreateCard(c, nPlayerIndex, i, nPlayerIndex == 1 || nPlayerIndex == 3);
-//      }
-//   }
-//}
+void Game::DrawSelector(int nX, int nY)
+{
+   SpotType eType;
+   HexCellGetSpotType(m_HexCells, nX, nY, &eType);
+   if( eType == Nothing )
+      return;
+
+   short nLeft = m_Metrics.GetLeftForPiece(nX, nY);
+   short nTop = m_Metrics.GetTopForPiece(nX, nY);
+   short nPieceSize = m_Metrics.GetPieceSize();
+
+   {
+      short s[] = { nLeft,                nLeft + nPieceSize/4,   nLeft + 3*nPieceSize/4, nLeft+nPieceSize,    nLeft+3*nPieceSize/4,   nLeft + nPieceSize/4 };
+      short t[] = { nTop + nPieceSize/2,  nTop,                   nTop,                   nTop + nPieceSize/2, nTop + nPieceSize,      nTop + nPieceSize };
+
+      filledPolygonRGBA(m_pScreen,
+                        s, t,
+                        6,
+                        0, 255, 255, 255);
+   }
+}
+
+void Game::Move(Direction eDirection)
+{
+   if( eDirection == Down && m_nCurrentY < (HexCellsGetHeight(m_HexCells) -1) )
+      m_nCurrentY++;
+   else if( eDirection == Left && m_nCurrentX > 0 )
+      m_nCurrentX--;
+   else if( eDirection == Right && m_nCurrentX < (HexCellsGetWidth(m_HexCells)-1) )
+      m_nCurrentX++;
+   else if( eDirection == Up && m_nCurrentY > 0 )
+      m_nCurrentY--;
+}
+
+void Game::DetermineBomb()
+{
+   SpotType eType;
+   HexCellGetSpotType(m_HexCells, m_nCurrentX, m_nCurrentY, &eType);
+   if( eType != Unknown )
+      return;
+   if( HEXCELLS_NOT_REVEALED != HexCellsIsRevealedSpot(m_HexCells, m_nCurrentX, m_nCurrentY) )
+      return;
+
+   HexCellsRevealAs(m_HexCells, m_nCurrentX, m_nCurrentY, HEXCELLS_REVEAL_BOMB);
+}
+
+void Game::DetermineClear()
+{
+   SpotType eType;
+   HexCellGetSpotType(m_HexCells, m_nCurrentX, m_nCurrentY, &eType);
+   if (eType != Unknown)
+      return;
+   if (HEXCELLS_NOT_REVEALED != HexCellsIsRevealedSpot(m_HexCells, m_nCurrentX, m_nCurrentY))
+      return;
+
+   HexCellsRevealAs(m_HexCells, m_nCurrentX, m_nCurrentY, HEXCELLS_REVEAL_NOT_BOMB);
+}
 

@@ -17,6 +17,8 @@ public:
    int GetTopForPiece(int nX, int nY) const;
    int GetPieceSize() const;
 
+   static short GetGapAmount() { return 3; }
+
 protected:
    int m_nSizePerPiece;
    int m_nTop;
