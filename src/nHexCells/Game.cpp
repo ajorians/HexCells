@@ -49,9 +49,7 @@ Game::Game(SDL_Surface* pScreen, Config* pConfig, AchieveConfig* pAchieve)
 
 Game::~Game()
 {
-   /*for (int i = 0; i<3; i++)
-      HeartsAIFree(&m_aAIs[i]);
-   nSDL_FreeFont(m_pFont);*/
+   FREEFONT(m_pFont);
    HexCellsLibFree(&m_HexCells);
 }
 
@@ -85,6 +83,10 @@ bool Game::PollEvents()
       /* We are only worried about SDL_KEYDOWN and SDL_KEYUP events */
       switch (event.type)
       {
+      case SDL_QUIT:
+      return false;
+      break;
+
       case SDL_KEYDOWN:
       switch (event.key.keysym.sym)
       {
@@ -122,6 +124,10 @@ bool Game::PollEvents()
       case SDLK_CLEAR:
       case SDLK_BACKSPACE:
       DetermineClear();
+      break;
+
+      case SDLK_s:
+      SimpleSolveStep();
       break;
 
       default:
@@ -298,5 +304,13 @@ void Game::DetermineClear()
       return;
 
    HexCellsRevealAs(m_HexCells, m_nCurrentX, m_nCurrentY, HEXCELLS_REVEAL_NOT_BOMB);
+}
+
+void Game::SimpleSolveStep()
+{
+   int nX, nY, nAsBomb;
+   HexCellsSimpleStep(m_HexCells, &nX, &nY, &nAsBomb);
+
+   HexCellsRevealAs(m_HexCells, nX, nY, nAsBomb);
 }
 

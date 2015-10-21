@@ -36,6 +36,8 @@ protected:
    void DetermineBomb();
    void DetermineClear();
 
+   void SimpleSolveStep();
+
 protected:
    void DrawCell(int nX, int nY);
    void DrawBorder(int nX, int nY);

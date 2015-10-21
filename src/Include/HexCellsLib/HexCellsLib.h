@@ -73,5 +73,7 @@ int HexCellsRevealAs(HexCellsLib api, int nX, int nY, int nAsBomb);
 
 int HexCellsUnknownRevealAs(HexCellsLib api, int nX, int nY, int nAsBomb, ValueDetails eDetails, int nValue);
 
+int HexCellsSimpleStep(HexCellsLib api, int* pnX, int* pnY, int* pnAsBomb);
+
 
 #endif

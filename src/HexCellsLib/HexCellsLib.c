@@ -40,6 +40,12 @@ struct HexCells
    //About string
 };
 
+typedef enum
+{
+   AsRevealed,
+   UnderTheHood
+} RevealedDetails;
+
 int IndexOfDirection(IndicatorOrientation eOrientation)
 {
    switch(eOrientation) {
@@ -116,7 +122,7 @@ int IsPiece_Safe(struct HexCellsBoard* pBoard, int nX, int nY)
    return 0;
 }
 
-int IsBomb_Safe(struct HexCellsBoard* pBoard, int nX, int nY)
+int IsBomb_Safe(struct HexCellsBoard* pBoard, int nX, int nY, RevealedDetails eRevealness)
 {
    struct HexCellPiece* pPiece;
    DEBUG_FUNC_NAME;
@@ -128,11 +134,27 @@ int IsBomb_Safe(struct HexCellsBoard* pBoard, int nX, int nY)
    pPiece = GetPieceAtSpot(pBoard, nX, nY);
    assert(pPiece != NULL);
 
-   assert(pPiece->m_eType != Unknown);//TODO: Handle this :)
+   if( pPiece->m_eType == Unknown )//It could be; but right now it isn't a bomb.
+      return 0;
 
-   if( pPiece->m_eType == Bomb )
-      return 1;
+   if( pPiece->m_eType == Bomb ) {
+      if( eRevealness == UnderTheHood || pPiece->m_bRevealed == HEXCELLS_IS_REVEALED )
+         return 1;
+   }
+
    return 0;
+}
+
+int GetRevealedSpot(struct HexCellsBoard* pBoard, int nX, int nY)
+{
+   DEBUG_FUNC_NAME;
+
+   if( GetPieceAtSpot(pBoard, nX, nY)->m_eType != Bomb && GetPieceAtSpot(pBoard, nX, nY)->m_eType != NotBomb && GetPieceAtSpot(pBoard, nX, nY)->m_eType != Unknown ) {
+      assert(0);
+      return HEXCELLS_NOT_REVEALED;
+   }
+
+   return GetPieceAtSpot(pBoard, nX, nY)->m_bRevealed;
 }
 
 int GetPiecesSurrounding(struct HexCellsBoard* pBoard, int nX, int nY)
@@ -162,7 +184,7 @@ int GetPiecesSurrounding(struct HexCellsBoard* pBoard, int nX, int nY)
    return nCount;
 }
 
-int GetBombsSurrounding(struct HexCellsBoard* pBoard, int nX, int nY, int nRadius, ValueDetails* peDetails)
+int GetBombsSurrounding(struct HexCellsBoard* pBoard, int nX, int nY, int nRadius, RevealedDetails eRevealness, ValueDetails* peDetails)
 {
    int nCount = 0;
    DEBUG_FUNC_NAME;
@@ -194,7 +216,7 @@ int GetBombsSurrounding(struct HexCellsBoard* pBoard, int nX, int nY, int nRadiu
       int i;
 
       for(i=0; i<ARR_SIZE(arrSurroundingLoc); i++) {
-         nCount += IsBomb_Safe(pBoard, nX+arrSurroundingLoc[i][0],   nY+arrSurroundingLoc[i][1]);
+         nCount += IsBomb_Safe(pBoard, nX+arrSurroundingLoc[i][0],   nY+arrSurroundingLoc[i][1], eRevealness);
       }
 
       if( peDetails ) {
@@ -215,7 +237,7 @@ int GetBombsSurrounding(struct HexCellsBoard* pBoard, int nX, int nY, int nRadiu
                if( IsPiece_Safe(pBoard, nX+arrSurroundingLoc[i][0],   nY+arrSurroundingLoc[i][1]) <= 0 )
                   continue;
 
-               if( IsBomb_Safe(pBoard, nX+arrSurroundingLoc[i][0],   nY+arrSurroundingLoc[i][1]) <= 0 )
+               if( IsBomb_Safe(pBoard, nX+arrSurroundingLoc[i][0],   nY+arrSurroundingLoc[i][1], eRevealness) <= 0 )
                   nIndexBeforeBomb = i;
                else
                   break;
@@ -233,7 +255,7 @@ int GetBombsSurrounding(struct HexCellsBoard* pBoard, int nX, int nY, int nRadiu
                if( IsPiece_Safe(pBoard, nX+arrSurroundingLoc[nIndexConsidering][0],   nY+arrSurroundingLoc[nIndexConsidering][1]) <= 0 )
                   continue;
 
-               if( IsBomb_Safe(pBoard, nX+arrSurroundingLoc[i][0],   nY+arrSurroundingLoc[i][1]) <= 0 )
+               if( IsBomb_Safe(pBoard, nX+arrSurroundingLoc[i][0],   nY+arrSurroundingLoc[i][1], eRevealness) <= 0 )
                   bFoundNonBomb = 1;
                else {
                   if( bFoundNonBomb == 1 )
@@ -261,21 +283,114 @@ int GetBombsSurrounding(struct HexCellsBoard* pBoard, int nX, int nY, int nRadiu
    //       \__/
 
    if( nRadius >= 2 ) {
-      nCount += IsBomb_Safe(pBoard, nX,   nY-4);//Above, Above
-      nCount += IsBomb_Safe(pBoard, nX+1, nY-3);//Above, Above right
-      nCount += IsBomb_Safe(pBoard, nX+2, nY-2);//Above right, Above right
-      nCount += IsBomb_Safe(pBoard, nX+2, nY  );//Right
-      nCount += IsBomb_Safe(pBoard, nX+2, nY+2);//Bottom right, bottom right
-      nCount += IsBomb_Safe(pBoard, nX+1, nY+3);//Bottom, bottom right
-      nCount += IsBomb_Safe(pBoard, nX,   nY+4);//Bottom, Bottom
-      nCount += IsBomb_Safe(pBoard, nX-1, nY+1);//Bottom, bottom left
-      nCount += IsBomb_Safe(pBoard, nX-2, nY+2);//Bottom left, bottom left
-      nCount += IsBomb_Safe(pBoard, nX-2, nY  );//Left
-      nCount += IsBomb_Safe(pBoard, nX-2, nY-2);//Above left, Above left
-      nCount += IsBomb_Safe(pBoard, nX-1, nY-3);//Above, Above left
+      nCount += IsBomb_Safe(pBoard, nX,   nY-4, eRevealness);//Above, Above
+      nCount += IsBomb_Safe(pBoard, nX+1, nY-3, eRevealness);//Above, Above right
+      nCount += IsBomb_Safe(pBoard, nX+2, nY-2, eRevealness);//Above right, Above right
+      nCount += IsBomb_Safe(pBoard, nX+2, nY  , eRevealness);//Right
+      nCount += IsBomb_Safe(pBoard, nX+2, nY+2, eRevealness);//Bottom right, bottom right
+      nCount += IsBomb_Safe(pBoard, nX+1, nY+3, eRevealness);//Bottom, bottom right
+      nCount += IsBomb_Safe(pBoard, nX,   nY+4, eRevealness);//Bottom, Bottom
+      nCount += IsBomb_Safe(pBoard, nX-1, nY+1, eRevealness);//Bottom, bottom left
+      nCount += IsBomb_Safe(pBoard, nX-2, nY+2, eRevealness);//Bottom left, bottom left
+      nCount += IsBomb_Safe(pBoard, nX-2, nY  , eRevealness);//Left
+      nCount += IsBomb_Safe(pBoard, nX-2, nY-2, eRevealness);//Above left, Above left
+      nCount += IsBomb_Safe(pBoard, nX-1, nY-3, eRevealness);//Above, Above left
 
       if( peDetails ) {
          *peDetails = HasNumber;//Blue numbered bombs can only be normal
+         //TODO: Well no; blue numbered bombs can be consecutive or non-consecutive; so handle that later
+      }
+   }
+
+   return nCount;
+}
+
+int GetNumberRevealedSurrounding(struct HexCellsBoard* pBoard, int nX, int nY, int nRadius, int bGetRevealed, int* pXPattern, int* pYPattern)
+{
+   int nCount = 0;
+   DEBUG_FUNC_NAME;
+
+   if( pBoard == NULL || nX < 0 || nX >= pBoard->m_nWidth || nY < 0 || nY >= pBoard->m_nHeight ) {
+      assert(0);
+      return 0;
+   }
+
+   assert(nRadius == 1 || nRadius == 2);
+
+   //     __
+   //  __/  \__
+   // /  \__/  \
+   // \__/  \__/
+   // /  \__/  \
+   // \__/  \__/
+   //    \__/
+   if( nRadius >= 1) {
+      int arrSurroundingLoc[][2] = {
+         {0,  -2},//Above
+         {-1, -1},//Top Left
+         {+1, -1},//Top Right
+         {-1, +1},//Bottom Left
+         {+1, +1},//Bottom Right
+         {0,  +2},//Below
+      };
+
+      int i;
+      for(i=0; i<ARR_SIZE(arrSurroundingLoc); i++) {
+         int x = nX+arrSurroundingLoc[i][0];
+         int y = nY+arrSurroundingLoc[i][1];
+         if( 1 == IsPiece_Safe(pBoard, x,   y) && 
+            bGetRevealed == GetRevealedSpot(pBoard, x,   y) ) {
+            nCount ++;
+            if( pXPattern != NULL && pYPattern != NULL ) {
+               *pXPattern = x;
+               *pYPattern = y;
+            }
+         }
+      }
+   }
+
+   //        |
+   //        v
+   //        __
+   //     __/  \__
+   //  __/  \__/  \__
+   // /  \__/  \__/  \
+   // \__/  \__/  \__/
+   // /  \__/  \__/  \  //<--
+   // \__/  \__/  \__/
+   // /  \__/  \__/  \
+   // \__/  \__/  \__/
+   //    \__/  \__/
+   //       \__/
+
+   if( nRadius >= 2 ) {
+      int arrSurroundingLoc[][2] = {
+         {0,  -4},//Above, Above
+         {1,  -3},//Above, Above right
+         {2,  -2},//Above right, Above right
+         {2,  0 },//Right
+         {2,  2 },//Bottom right, bottom right
+         {1,  3 },//Bottom, bottom right
+         {0,  4 },//Bottom, Bottom
+         {-1, 1 },//Bottom, bottom left
+         {-2, 2 },//Bottom left, bottom left
+         {-2, 0 },//Left
+         {-2, -2},//Above left, Above left
+         {-1, -3}//Above, Above left
+      };
+
+      int i;
+      for(i=0; i<ARR_SIZE(arrSurroundingLoc); i++) {
+         int x = nX+arrSurroundingLoc[i][0];
+         int y = nY+arrSurroundingLoc[i][1];
+         if( 1 == IsPiece_Safe(pBoard, x,   y) && 
+            bGetRevealed == GetRevealedSpot(pBoard, x,   y) ) {
+            nCount++;
+            if( pXPattern != NULL && pYPattern != NULL ) {
+               *pXPattern = x;
+               *pYPattern = y;
+            }
+         }
       }
    }
 
@@ -381,10 +496,10 @@ void UpdateValues(struct HexCellsBoard* pBoard)
             pPiece->m_nValue = GetIndicatorValue(pBoard, x, y, pPiece->m_eOrientation, NULL);
          }
          else if (pPiece->m_eType == NotBomb) {
-            pPiece->m_nValue = GetBombsSurrounding(pBoard, x, y, 1, NULL);
+            pPiece->m_nValue = GetBombsSurrounding(pBoard, x, y, 1, UnderTheHood, NULL);
          }
          else if (pPiece->m_eType == Bomb) {
-            pPiece->m_nValue = GetBombsSurrounding(pBoard, x, y, 2, NULL);
+            pPiece->m_nValue = GetBombsSurrounding(pBoard, x, y, 2, UnderTheHood, NULL);
          }
          else if (pPiece->m_eType == Nothing) {
          }
@@ -825,11 +940,11 @@ int HexCellsGetRevealedSpotValue(HexCellsLib api, int nX, int nY, int* pnValue, 
       }
       else if( eType == NotBomb ) {
          //Figure out bombs surrounding this spot
-         *pnValue = GetBombsSurrounding(pH->m_pBoard, nX, nY, 1/*Radius*/, peDetails);
+         *pnValue = GetBombsSurrounding(pH->m_pBoard, nX, nY, 1/*Radius*/, UnderTheHood, peDetails);
       }
       else if( eType == Bomb ) {
          //Figure out bombs 2x surrounding this spot
-         *pnValue = GetBombsSurrounding(pH->m_pBoard, nX, nY, 2/*Radius*/, peDetails);
+         *pnValue = GetBombsSurrounding(pH->m_pBoard, nX, nY, 2/*Radius*/, UnderTheHood, peDetails);
       }
 
    }
@@ -882,23 +997,20 @@ int HexCellsIsRevealedSpot(HexCellsLib api, int nX, int nY)
 
    pH = (struct HexCells*)api;
 
-   if( GetPieceAtSpot(pH->m_pBoard, nX, nY)->m_eType != Bomb && GetPieceAtSpot(pH->m_pBoard, nX, nY)->m_eType != NotBomb && GetPieceAtSpot(pH->m_pBoard, nX, nY)->m_eType != Unknown ) {
-      assert(0);
-      return HEXCELLS_NOT_REVEALED;
-   }
-
-   return GetPieceAtSpot(pH->m_pBoard, nX, nY)->m_bRevealed;
+   return GetRevealedSpot(pH->m_pBoard, nX, nY);
 }
 
 int HexCellsRevealAs(HexCellsLib api, int nX, int nY, int nAsBomb)
 {
    struct HexCells* pH;
+   struct HexCellPiece* pPiece;
    SpotType eType;
    DEBUG_FUNC_NAME;
 
    pH = (struct HexCells*)api;
 
-   eType = GetPieceAtSpot(pH->m_pBoard, nX, nY)->m_eType;
+   pPiece = GetPieceAtSpot(pH->m_pBoard, nX, nY);
+   eType = pPiece->m_eType;
    if( eType != Bomb && eType != NotBomb && eType != Unknown )//You cannot click on an indicator or nothing
       return HEXCELLSLIB_BADARGUMENT;
 
@@ -936,6 +1048,75 @@ int HexCellsUnknownRevealAs(HexCellsLib api, int nX, int nY, int nAsBomb, ValueD
    pPiece->m_nValue = nValue;
 
    assert(pPiece->m_nValue >= -1);
+
+   return HEXCELLSLIB_OK;
+}
+
+int HexCellsSimpleStep(HexCellsLib api, int* pnX, int* pnY, int* pnAsBomb)
+{
+   struct HexCells* pH;
+   struct HexCellPiece* pPiece;
+   int x,y;
+   DEBUG_FUNC_NAME;
+
+   pH = (struct HexCells*)api;
+
+   //First look for a non-bomb that has a number with exactly that many bombs surrounding it revealed and more surrounding spots
+   for(x=0; x<pH->m_pBoard->m_nWidth; x++) {
+      for(y=0; y<pH->m_pBoard->m_nHeight; y++) {
+         pPiece = GetPieceAtSpot(pH->m_pBoard, x, y);
+
+         if( pPiece->m_eType == Indicator || pPiece->m_eType == Unknown || pPiece->m_eType == Nothing || pPiece->m_eType == Bomb )
+            continue;
+
+         assert(pPiece->m_eType == NotBomb);
+
+         if( pPiece->m_bRevealed != HEXCELLS_IS_REVEALED )
+            continue;
+
+         int nValue = pPiece->m_nValue;
+         assert(nValue >= 0 && nValue <= 6);
+
+         int nPiecesSurrounding = GetPiecesSurrounding(pH->m_pBoard, x, y);
+
+         int nXRevealed, nYRevealed;
+         int nReveledPiecesSurrounding = GetNumberRevealedSurrounding(pH->m_pBoard, x, y, 1, 1, &nXRevealed, &nYRevealed);
+         assert(nReveledPiecesSurrounding <= nPiecesSurrounding);
+
+         int nXUnrevealed, nYUnrevealed;
+         int nUnrevealedPiecesSurrounding = GetNumberRevealedSurrounding(pH->m_pBoard, x, y, 1, 0, &nXUnrevealed, &nYUnrevealed);
+         assert( nUnrevealedPiecesSurrounding == (nPiecesSurrounding - nReveledPiecesSurrounding) );
+         assert(nUnrevealedPiecesSurrounding >= 0);
+         if( nUnrevealedPiecesSurrounding <= 0 )//Nothing to unreveal
+            continue;
+
+         int nKnownBombsSurrounding = GetBombsSurrounding(pH->m_pBoard, x, y, 1, AsRevealed, NULL );
+         assert(nKnownBombsSurrounding <= nPiecesSurrounding);
+
+         if( nValue == (nKnownBombsSurrounding + nUnrevealedPiecesSurrounding) ) {
+            //Reveal a spot as bomb and return
+
+            if( pnX != NULL && pnY != NULL ) {
+               *pnX = nXUnrevealed;
+               *pnY = nYUnrevealed;
+               *pnAsBomb = HEXCELLS_REVEAL_BOMB;
+            }
+
+            return HEXCELLSLIB_OK;
+         }
+         else if( nValue == nKnownBombsSurrounding && nUnrevealedPiecesSurrounding > 0 ) {
+            //Reveal a spot as non-bomb and return
+
+            if( pnX != NULL && pnY != NULL ) {
+               *pnX = nXUnrevealed;
+               *pnY = nYUnrevealed;
+               *pnAsBomb = HEXCELLS_REVEAL_NOT_BOMB;
+            }
+            return HEXCELLSLIB_OK;
+         }
+
+      }
+   }
 
    return HEXCELLSLIB_OK;
 }

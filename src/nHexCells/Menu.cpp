@@ -87,6 +87,10 @@ bool MainMenu::PollEvents()
       /* We are only worried about SDL_KEYDOWN and SDL_KEYUP events */
       switch (event.type)
       {
+      case SDL_QUIT:
+      m_eChoice = Quit;
+      return false;
+
       case SDL_KEYDOWN:
       printf("Key press detected\n");
       switch (event.key.keysym.sym)
