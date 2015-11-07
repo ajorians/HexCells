@@ -788,6 +788,128 @@ int TestSimpleSolveNewData2()
    return TEST_SUCCEEDED;
 }
 
+//X Y Type Revealed Value(-1 if unknown) Details Orientation(indicators-only)
+#define HEXCELLS_1_1_GAME_DATA   "Hexcells 1 0 7 11 7 \
+1 0 1 0 -1 0 \
+0 1 1 0 -1 0 \
+2 1 1 0 -1 0 \
+1 2 2 1 6 0 \
+0 3 1 0 -1 0 \
+2 3 1 0 -1 0 \
+1 4 1 0 -1 0 \
+5 0 2 0 0 0 \
+4 1 2 0 0 0 \
+6 1 2 0 0 0 \
+5 2 2 1 0 0 \
+4 3 2 0 0 0 \
+6 3 2 0 0 0 \
+5 4 2 0 0 0 \
+5 6 2 0 0 0 \
+5 8 2 0 1 0 \
+5 10 1 0 -1 0"
+
+int TestSimpleSolveHexCells1_1()
+{
+   HexCellsLib api;
+   PRINT_FUNC;
+   if (HEXCELLSLIB_OK != HexCellsLibCreate(&api, HEXCELLS_1_1_GAME_DATA))
+      return TEST_FAILED;
+
+   if (7 != HexCellsGetBombsRemaining(api))
+      return TEST_FAILED;
+
+   int nX, nY, nAsBomb;
+   while(1) {
+      if (HEXCELLS_IS_GAMEOVER == HexCellsIsGameOver(api))
+         break;
+
+      if (HEXCELLS_SOLVESTEP != HexCellsSimpleStep(api, &nX, &nY, &nAsBomb) )
+         return TEST_FAILED;
+
+      if( HEXCELLS_NOT_REVEALED != HexCellsIsRevealedSpot(api, nX, nY) )
+         return TEST_FAILED;
+
+      if( HEXCELLS_CORRECT != HexCellsRevealAs(api, nX, nY, nAsBomb) )
+         return TEST_FAILED;
+
+      if( HEXCELLS_IS_REVEALED != HexCellsIsRevealedSpot(api, nX, nY) )
+         return TEST_FAILED;
+   }
+
+   if (HEXCELLSLIB_OK != HexCellsLibFree(&api))
+      return TEST_FAILED;
+
+   return TEST_SUCCEEDED;
+}
+
+//X Y Type Revealed Value(-1 if unknown) Details Orientation(indicators-only)
+//bomb = 1, not bomb = 2
+#define HEXCELLS_1_2_GAME_DATA   "Hexcells 1 0 11 9 15 \
+2 0 1 0 -1 0 \
+0 2 2 1 2 0 \
+2 2 2 0 3 0 \
+4 2 2 1 2 0 \
+1 3 1 0 -1 0 \
+3 3 1 0 -1 0 \
+0 4 1 0 -1 0 \
+2 4 2 1 5 0 \
+4 4 1 0 -1 0 \
+1 5 1 0 -1 0 \
+3 5 1 0 -1 0 \
+0 6 2 1 2 0 \
+2 6 1 0 -1 0 \
+4 6 2 1 2 0 \
+2 8 2 1 1 0 \
+8 0 1 0 -1 0 \
+6 2 1 0 -1 0 \
+8 2 2 0 2 0 \
+10 2 1 0 -1 0 \
+7 3 2 1 2 0 \
+9 3 2 1 2 0 \
+6 4 2 1 2 0 \
+8 4 1 0 -1 0 \
+10 4 2 1 2 0 \
+7 5 2 1 2 0 \
+9 5 2 1 2 0 \
+6 6 1 0 -1 0 \
+8 6 2 1 2 0 \
+10 6 1 0 -1 0 \
+8 8 1 0 -1 0"
+
+int TestSimpleSolveHexCells1_2()
+{
+   HexCellsLib api;
+   PRINT_FUNC;
+   if (HEXCELLSLIB_OK != HexCellsLibCreate(&api, HEXCELLS_1_2_GAME_DATA))
+      return TEST_FAILED;
+
+   if (15 != HexCellsGetBombsRemaining(api))
+      return TEST_FAILED;
+
+   int nX, nY, nAsBomb;
+   while(1) {
+      if (HEXCELLS_IS_GAMEOVER == HexCellsIsGameOver(api))
+         break;
+
+      if (HEXCELLS_SOLVESTEP != HexCellsSimpleStep(api, &nX, &nY, &nAsBomb) )
+         return TEST_FAILED;
+
+      if( HEXCELLS_NOT_REVEALED != HexCellsIsRevealedSpot(api, nX, nY) )
+         return TEST_FAILED;
+
+      if( HEXCELLS_CORRECT != HexCellsRevealAs(api, nX, nY, nAsBomb) )
+         return TEST_FAILED;
+
+      if( HEXCELLS_IS_REVEALED != HexCellsIsRevealedSpot(api, nX, nY) )
+         return TEST_FAILED;
+   }
+
+   if (HEXCELLSLIB_OK != HexCellsLibFree(&api))
+      return TEST_FAILED;
+
+   return TEST_SUCCEEDED;
+}
+
 typedef int (*testfunc)();
 testfunc g_Tests[] =
 {
@@ -802,7 +924,9 @@ testfunc g_Tests[] =
    TestGetIndicatorCellsNewData,
    TestSolveNewUnknownData,
    TestSimpleSolveNewData,
-   TestSimpleSolveNewData2
+   TestSimpleSolveNewData2,
+   TestSimpleSolveHexCells1_1,
+   TestSimpleSolveHexCells1_2
 };
 
 void RunTests()

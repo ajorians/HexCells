@@ -52,10 +52,63 @@ extern "C"
 6 5 2 0 2 0 \
 7 4 2 1 0 0"
 
+#define HEXCELLS_1_1_GAME_DATA   "Hexcells 1 0 7 11 7 \
+1 0 1 0 -1 0 \
+0 1 1 0 -1 0 \
+2 1 1 0 -1 0 \
+1 2 2 1 6 0 \
+0 3 1 0 -1 0 \
+2 3 1 0 -1 0 \
+1 4 1 0 -1 0 \
+5 0 2 0 0 0 \
+4 1 2 0 0 0 \
+6 1 2 0 0 0 \
+5 2 2 1 0 0 \
+4 3 2 0 0 0 \
+6 3 2 0 0 0 \
+5 4 2 0 0 0 \
+5 6 2 0 0 0 \
+5 8 2 0 1 0 \
+5 10 1 0 -1 0"
+
+//X Y Type Revealed Value(-1 if unknown) Details Orientation(indicators-only)
+//bomb = 1, not bomb = 2
+#define HEXCELLS_1_2_GAME_DATA   "Hexcells 1 0 11 9 15 \
+2 0 1 0 -1 0 \
+0 2 2 1 2 0 \
+2 2 2 0 3 0 \
+4 2 2 1 2 0 \
+1 3 1 0 -1 0 \
+3 3 1 0 -1 0 \
+0 4 1 0 -1 0 \
+2 4 2 1 5 0 \
+4 4 1 0 -1 0 \
+1 5 1 0 -1 0 \
+3 5 1 0 -1 0 \
+0 6 2 1 2 0 \
+2 6 1 0 -1 0 \
+4 6 2 1 2 0 \
+2 8 2 1 1 0 \
+8 0 1 0 -1 0 \
+6 2 1 0 -1 0 \
+8 2 2 0 2 0 \
+10 2 1 0 -1 0 \
+7 3 2 1 2 0 \
+9 3 2 1 2 0 \
+6 4 2 1 2 0 \
+8 4 1 0 -1 0 \
+10 4 2 1 2 0 \
+7 5 2 1 2 0 \
+9 5 2 1 2 0 \
+6 6 1 0 -1 0 \
+8 6 2 1 2 0 \
+10 6 1 0 -1 0 \
+8 8 1 0 -1 0"
+
 Game::Game(SDL_Surface* pScreen, Config* pConfig, AchieveConfig* pAchieve)
    : m_pScreen(pScreen), m_pConfig(pConfig), m_pAchieve(pAchieve), m_nCurrentX(0), m_nCurrentY(0)
 {
-   HexCellsLibCreate(&m_HexCells, NEW_GAME_DATA2);
+   HexCellsLibCreate(&m_HexCells, HEXCELLS_1_2_GAME_DATA);
 
 #ifdef _TINSPIRE
    m_pFont = LOADFONT(NSDL_FONT_THIN, 0/*R*/, 0/*G*/, 0/*B*/);
