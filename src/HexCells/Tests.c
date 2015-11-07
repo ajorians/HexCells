@@ -151,6 +151,25 @@ int g_nRelocatedGlobals = 0;
 6 5 3 0 -1 1 \
 7 4 2 1 0 0"
 
+#define NEW_GAME_DATA2   "Hexcells 1 0 8 8 5 \
+0 3 0 0 1 0 64 \
+1 4 2 0 1 0 \
+2 3 1 0 -1 1 \
+2 5 2 0 2 0 \
+3 2 2 0 2 0 \
+3 4 2 0 2 0 \
+3 6 1 0 -1 1 \
+4 1 1 0 -1 1 \
+4 3 2 0 2 0 \
+4 5 2 1 3 0 \
+4 7 2 1 2 0 \
+5 2 2 0 2 0 \
+5 4 1 0 -1 1 \
+5 6 1 0 -1 1 \
+6 3 2 0 1 1 \
+6 5 2 0 2 0 \
+7 4 2 1 0 0"
+
 int TestConstruction()
 {
    HexCellsLib api;
@@ -487,6 +506,59 @@ int TestLoadNewUnknownData()
    return TEST_SUCCEEDED;
 }
 
+int TestGetIndicatorCellsNewData()
+{
+   int nValue;
+   ValueDetails eDetails;
+   SpotType eType;
+   IndicatorOrientation eDirection;
+   HexCellsLib api;
+   PRINT_FUNC;
+   if( HEXCELLSLIB_OK != HexCellsLibCreate(&api, NEW_GAME_DATA) )
+      return TEST_FAILED;
+
+   if( 5 != HexCellsGetBombsRemaining(api) )
+      return TEST_FAILED;
+
+   if( HEXCELLSLIB_OK != HexCellsGetRevealedSpotValue(api, 7, 4, &nValue, &eDetails) || nValue != 0 || eDetails != HasNumber )
+      return TEST_FAILED;
+
+   if( HEXCELLSLIB_OK != HexCellsGetRevealedSpotValue(api, 4, 5, &nValue, &eDetails) || nValue != 3 || eDetails != NotConsecutive )
+      return TEST_FAILED;
+
+   if( HEXCELLSLIB_OK != HexCellsGetRevealedSpotValue(api, 4, 7, &nValue, &eDetails) || nValue != 2 || eDetails != NotConsecutive )
+      return TEST_FAILED;
+
+   if (HEXCELLSLIB_OK != HexCellGetSpotType(api, 5, 0, &eType) || eType != Indicator)
+      return TEST_FAILED;
+
+   if (HEXCELLSLIB_OK != HexCellsGetIndicatorDirection(api, 5, 0, &eDirection) || eDirection != IO_Top)
+      return TEST_FAILED;
+
+   if (HEXCELLSLIB_OK != HexCellsGetIndicatorValue(api, 5, 0, IO_Top, &nValue, &eDetails) || nValue != 2 || eDetails != HasNumber)
+      return TEST_FAILED;
+
+   if (HEXCELLSLIB_OK != HexCellGetSpotType(api, 0, 3, &eType) || eType != Indicator)
+      return TEST_FAILED;
+
+   if (HEXCELLSLIB_OK != HexCellsGetIndicatorDirection(api, 0, 3, &eDirection) || eDirection != IO_TopLeft)
+      return TEST_FAILED;
+
+   if (HEXCELLSLIB_OK != HexCellsGetIndicatorValue(api, 0, 3, IO_TopLeft, &nValue, &eDetails) || nValue != 1 || eDetails != HasNumber)
+      return TEST_FAILED;
+
+   if( 3 != HexCellsGetIndicatorAppliableCellsCount(api, 5, 0) )
+      return TEST_FAILED;
+
+   if( 4 != HexCellsGetIndicatorAppliableCellsCount(api, 0, 3) )
+      return TEST_FAILED;
+
+   if (HEXCELLSLIB_OK != HexCellsLibFree(&api))
+      return TEST_FAILED;
+
+   return TEST_SUCCEEDED;
+}
+
 int TestSolveNewUnknownData()
 {
    int nValue;
@@ -622,7 +694,73 @@ int TestSimpleSolveNewData()
    //Taking first turn
    int nX, nY, nAsBomb;
    for(int i=0; i<13; i++) {
-      if (HEXCELLSLIB_OK != HexCellsSimpleStep(api, &nX, &nY, &nAsBomb) )
+      if (HEXCELLS_SOLVESTEP != HexCellsSimpleStep(api, &nX, &nY, &nAsBomb) )
+         return TEST_FAILED;
+
+      if( HEXCELLS_NOT_REVEALED != HexCellsIsRevealedSpot(api, nX, nY) )
+         return TEST_FAILED;
+
+      if( HEXCELLS_CORRECT != HexCellsRevealAs(api, nX, nY, nAsBomb) )
+         return TEST_FAILED;
+
+      if( HEXCELLS_IS_REVEALED != HexCellsIsRevealedSpot(api, nX, nY) )
+         return TEST_FAILED;
+
+      if( i >= 12 )
+         break;
+
+      if (HEXCELLS_IS_GAMEOVER == HexCellsIsGameOver(api))
+         return TEST_FAILED;
+   }
+
+   if (HEXCELLS_IS_GAMEOVER != HexCellsIsGameOver(api))
+      return TEST_FAILED;
+
+   if (HEXCELLSLIB_OK != HexCellsLibFree(&api))
+      return TEST_FAILED;
+
+   return TEST_SUCCEEDED;
+}
+
+int TestSimpleSolveNewData2()
+{
+   int nValue;
+   ValueDetails eDetails;
+   SpotType eType;
+   IndicatorOrientation eDirection;
+   HexCellsLib api;
+   PRINT_FUNC;
+   if (HEXCELLSLIB_OK != HexCellsLibCreate(&api, NEW_GAME_DATA2))
+      return TEST_FAILED;
+
+   if (5 != HexCellsGetBombsRemaining(api))
+      return TEST_FAILED;
+
+   if (HEXCELLSLIB_OK != HexCellsGetRevealedSpotValue(api, 7, 4, &nValue, &eDetails) || nValue != 0 || eDetails != HasNumber)
+      return TEST_FAILED;
+
+   if (HEXCELLSLIB_OK != HexCellsGetRevealedSpotValue(api, 4, 5, &nValue, &eDetails) || nValue != 3 || eDetails != HasNumber)
+      return TEST_FAILED;
+
+   if (HEXCELLSLIB_OK != HexCellsGetRevealedSpotValue(api, 4, 7, &nValue, &eDetails) || nValue != 2 || eDetails != HasNumber)
+      return TEST_FAILED;
+
+   if (HEXCELLSLIB_OK != HexCellGetSpotType(api, 0, 3, &eType) || eType != Indicator)
+      return TEST_FAILED;
+
+   if (HEXCELLSLIB_OK != HexCellsGetIndicatorDirection(api, 0, 3, &eDirection) || eDirection != IO_TopLeft)
+      return TEST_FAILED;
+
+   if (HEXCELLSLIB_OK != HexCellsGetIndicatorValue(api, 0, 3, IO_TopLeft, &nValue, &eDetails) || nValue != 1 || eDetails != HasNumber)
+      return TEST_FAILED;
+
+   if (HEXCELLS_IS_GAMEOVER == HexCellsIsGameOver(api))
+      return TEST_FAILED;
+
+   //Taking first turn
+   int nX, nY, nAsBomb;
+   for(int i=0; i<13; i++) {
+      if (HEXCELLS_SOLVESTEP != HexCellsSimpleStep(api, &nX, &nY, &nAsBomb) )
          return TEST_FAILED;
 
       if( HEXCELLS_NOT_REVEALED != HexCellsIsRevealedSpot(api, nX, nY) )
@@ -661,8 +799,10 @@ testfunc g_Tests[] =
    TestRevealedDetails,
    TestLoadNewData,
    TestLoadNewUnknownData,
+   TestGetIndicatorCellsNewData,
    TestSolveNewUnknownData,
-   TestSimpleSolveNewData
+   TestSimpleSolveNewData,
+   TestSimpleSolveNewData2
 };
 
 void RunTests()

@@ -154,7 +154,7 @@ int GetRevealedSpot(struct HexCellsBoard* pBoard, int nX, int nY)
       return HEXCELLS_NOT_REVEALED;
    }
 
-   return GetPieceAtSpot(pBoard, nX, nY)->m_bRevealed;
+   return GetPieceAtSpot(pBoard, nX, nY)->m_bRevealed ? HEXCELLS_IS_REVEALED : HEXCELLS_NOT_REVEALED;
 }
 
 int GetPiecesSurrounding(struct HexCellsBoard* pBoard, int nX, int nY)
@@ -283,18 +283,27 @@ int GetBombsSurrounding(struct HexCellsBoard* pBoard, int nX, int nY, int nRadiu
    //       \__/
 
    if( nRadius >= 2 ) {
-      nCount += IsBomb_Safe(pBoard, nX,   nY-4, eRevealness);//Above, Above
-      nCount += IsBomb_Safe(pBoard, nX+1, nY-3, eRevealness);//Above, Above right
-      nCount += IsBomb_Safe(pBoard, nX+2, nY-2, eRevealness);//Above right, Above right
-      nCount += IsBomb_Safe(pBoard, nX+2, nY  , eRevealness);//Right
-      nCount += IsBomb_Safe(pBoard, nX+2, nY+2, eRevealness);//Bottom right, bottom right
-      nCount += IsBomb_Safe(pBoard, nX+1, nY+3, eRevealness);//Bottom, bottom right
-      nCount += IsBomb_Safe(pBoard, nX,   nY+4, eRevealness);//Bottom, Bottom
-      nCount += IsBomb_Safe(pBoard, nX-1, nY+1, eRevealness);//Bottom, bottom left
-      nCount += IsBomb_Safe(pBoard, nX-2, nY+2, eRevealness);//Bottom left, bottom left
-      nCount += IsBomb_Safe(pBoard, nX-2, nY  , eRevealness);//Left
-      nCount += IsBomb_Safe(pBoard, nX-2, nY-2, eRevealness);//Above left, Above left
-      nCount += IsBomb_Safe(pBoard, nX-1, nY-3, eRevealness);//Above, Above left
+      int arrSurroundingLoc[][2] = {
+         {0,  -4},//Above, Above
+         {1,  -3},//Above, Above right
+         {2,  -2},//Above right, Above right
+         {2,  0 },//Right
+         {2,  2 },//Bottom right, bottom right
+         {1,  3 },//Bottom, bottom right
+         {0,  4 },//Bottom, Bottom
+         {-1, 1 },//Bottom, bottom left
+         {-2, 2 },//Bottom left, bottom left
+         {-2, 0 },//Left
+         {-2, -2},//Above left, Above left
+         {-1, -3}//Above, Above left
+      };
+
+      int i;
+      for(i=0; i<ARR_SIZE(arrSurroundingLoc); i++) {
+         int x = nX+arrSurroundingLoc[i][0];
+         int y = nY+arrSurroundingLoc[i][1];
+         nCount += IsBomb_Safe(pBoard, x, y, eRevealness);
+      }
 
       if( peDetails ) {
          *peDetails = HasNumber;//Blue numbered bombs can only be normal
@@ -475,6 +484,101 @@ int GetIndicatorValue(struct HexCellsBoard* pBoard, int nX, int nY, IndicatorOri
 
       assert( *peDetails != Question );//Not exposing concealed for indicators
    }
+
+   return nCount;
+}
+
+void GetMovementForDirection(int* pnStepX, int* pnStepY, IndicatorOrientation eOrientation)
+{
+   DEBUG_FUNC_NAME;
+
+   int nStepX, nStepY;
+   switch(eOrientation) {
+   default:
+   assert(0);
+   case IO_Left:
+      nStepX = 2;
+      nStepY = 0;
+   break;
+   case IO_TopLeft:
+      nStepX = 1;
+      nStepY = 1;
+   break;
+   case IO_Top:
+      nStepX = 0;
+      nStepY = 2;
+   break;
+   case IO_TopRight:
+      nStepX = -1;
+      nStepY = 1;
+   break;
+   case IO_Right:
+      nStepX = -2;
+      nStepY = 0;
+   break;
+   case IO_BottomRight:
+      nStepX = -1;
+      nStepY = -1;
+   break;
+   case IO_Bottom:
+      nStepX = -2;
+      nStepY = 0;
+   break;
+   case IO_BottomLeft:
+      nStepX = -1;
+      nStepY = 1;
+   break;
+   }
+
+   if( pnStepX )
+      *pnStepX = nStepX;
+
+   if( pnStepY )
+      *pnStepY = nStepY;
+}
+
+int GetTotalNumberFromPosition(struct HexCellsBoard* pBoard, int x, int y, IndicatorOrientation eOrientation)
+{
+   DEBUG_FUNC_NAME;
+
+   int nStepX, nStepY;
+   int i;
+   int nCount = 0;
+   GetMovementForDirection(&nStepX, &nStepY, eOrientation);
+
+   int nMax = max(pBoard->m_nHeight, pBoard->m_nWidth);
+   for(i=0; i<nMax; i++) {
+      x += nStepX;
+      y += nStepY;
+      nCount += IsPiece_Safe(pBoard, x, y);
+   }
+
+   return nCount;
+}
+
+int GetNumberRevealedFromPosition(struct HexCellsBoard* pBoard, int x, int y, IndicatorOrientation eOrientation, int* pnNumberBombsRevealed)
+{
+   DEBUG_FUNC_NAME;
+
+   int nStepX, nStepY;
+   int i;
+   int nCount = 0;
+   int nBombsRevealed = 0;
+   GetMovementForDirection(&nStepX, &nStepY, eOrientation);
+
+   int nMax = max(pBoard->m_nHeight, pBoard->m_nWidth);
+   for(i=0; i<nMax; i++) {
+      x += nStepX;
+      y += nStepY;
+      if( 0 == IsPiece_Safe(pBoard, x, y) )
+         continue;
+      if( HEXCELLS_IS_REVEALED == GetRevealedSpot(pBoard, x, y) )
+         nCount++;
+      nBombsRevealed += IsBomb_Safe(pBoard, x, y, AsRevealed);
+   }
+
+   if( pnNumberBombsRevealed )
+      *pnNumberBombsRevealed = nBombsRevealed;
 
    return nCount;
 }
@@ -1074,6 +1178,10 @@ int HexCellsSimpleStep(HexCellsLib api, int* pnX, int* pnY, int* pnAsBomb)
          if( pPiece->m_bRevealed != HEXCELLS_IS_REVEALED )
             continue;
 
+         if( pPiece->m_eDetail == Question )
+            continue;
+         assert(pPiece->m_eDetail != Question);
+
          int nValue = pPiece->m_nValue;
          assert(nValue >= 0 && nValue <= 6);
 
@@ -1102,7 +1210,7 @@ int HexCellsSimpleStep(HexCellsLib api, int* pnX, int* pnY, int* pnAsBomb)
                *pnAsBomb = HEXCELLS_REVEAL_BOMB;
             }
 
-            return HEXCELLSLIB_OK;
+            return HEXCELLS_SOLVESTEP;
          }
          else if( nValue == nKnownBombsSurrounding && nUnrevealedPiecesSurrounding > 0 ) {
             //Reveal a spot as non-bomb and return
@@ -1112,12 +1220,74 @@ int HexCellsSimpleStep(HexCellsLib api, int* pnX, int* pnY, int* pnAsBomb)
                *pnY = nYUnrevealed;
                *pnAsBomb = HEXCELLS_REVEAL_NOT_BOMB;
             }
-            return HEXCELLSLIB_OK;
+            return HEXCELLS_SOLVESTEP;
          }
 
       }
    }
 
-   return HEXCELLSLIB_OK;
+   //Next look for an indicator with a number of bombs that is already met
+   for(x=0; x<pH->m_pBoard->m_nWidth; x++) {
+      for(y=0; y<pH->m_pBoard->m_nHeight; y++) {
+         pPiece = GetPieceAtSpot(pH->m_pBoard, x, y);
+
+         if( pPiece->m_eType != Indicator )
+            continue;
+
+         int nBombsAlongDirection = pPiece->m_nValue;
+         IndicatorOrientation eOrientation = pPiece->m_eOrientation;
+
+         int nTotalCellsInDirection = GetTotalNumberFromPosition(pH->m_pBoard, x, y, eOrientation);
+         int nBombsRevealedInDirection = 0;
+         int nRevealedInDirection = GetNumberRevealedFromPosition(pH->m_pBoard, x, y, eOrientation, &nBombsRevealedInDirection);
+
+         if( nRevealedInDirection >= nTotalCellsInDirection )//Everything is already revealed for this indicator
+            continue;
+
+         if( nBombsAlongDirection <= nBombsRevealedInDirection ) {//Everything else must be NOT a bomb
+            int nStepX, nStepY;
+            int nX = x, nY = y;
+            int i;
+            int nMax = max(pH->m_pBoard->m_nWidth, pH->m_pBoard->m_nHeight);
+            GetMovementForDirection(&nStepX, &nStepY, eOrientation);
+            for(i=0; i<nMax; i++) {
+               SpotType eType;
+               nX += nStepX;
+               nY += nStepY;
+               if( 0 == IsPiece_Safe(pH->m_pBoard, nX, nY) )
+                  continue;
+
+               HexCellGetSpotType(api, nX, nY, &eType);
+               if( eType != Unknown )
+                  continue;
+
+               if( pnX != NULL && pnY != NULL ) {
+                  *pnX = nX;
+                  *pnY = nY;
+                  *pnAsBomb = HEXCELLS_REVEAL_NOT_BOMB;
+               }
+               return HEXCELLS_SOLVESTEP;
+            }
+         }
+      }
+   }
+
+   return HEXCELLS_NOSTEP;
+}
+
+int HexCellsGetIndicatorAppliableCellsCount(HexCellsLib api, int nX, int nY)
+{
+   struct HexCells* pH;
+   struct HexCellPiece* pPiece;
+   DEBUG_FUNC_NAME;
+
+   pH = (struct HexCells*)api;
+
+   pPiece = GetPieceAtSpot(pH->m_pBoard, nX, nY);
+
+   if( pPiece->m_eType != Indicator )
+      return HEXCELLSLIB_BADARGUMENT;
+
+   return GetTotalNumberFromPosition(pH->m_pBoard, nX, nY, pPiece->m_eOrientation);
 }
 

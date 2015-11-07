@@ -33,10 +33,29 @@ extern "C"
 6 5 2 0 2 0 \
 7 4 2 1 0 0"
 
+#define NEW_GAME_DATA2   "Hexcells 1 0 8 8 5 \
+0 3 0 0 1 0 64 \
+1 4 2 0 1 0 \
+2 3 1 0 -1 1 \
+2 5 2 0 2 0 \
+3 2 2 0 2 0 \
+3 4 2 0 2 0 \
+3 6 1 0 -1 1 \
+4 1 1 0 -1 1 \
+4 3 2 0 2 0 \
+4 5 2 1 3 0 \
+4 7 2 1 2 0 \
+5 2 2 0 2 0 \
+5 4 1 0 -1 1 \
+5 6 1 0 -1 1 \
+6 3 2 0 1 1 \
+6 5 2 0 2 0 \
+7 4 2 1 0 0"
+
 Game::Game(SDL_Surface* pScreen, Config* pConfig, AchieveConfig* pAchieve)
    : m_pScreen(pScreen), m_pConfig(pConfig), m_pAchieve(pAchieve), m_nCurrentX(0), m_nCurrentY(0)
 {
-   HexCellsLibCreate(&m_HexCells, NEW_GAME_DATA);
+   HexCellsLibCreate(&m_HexCells, NEW_GAME_DATA2);
 
 #ifdef _TINSPIRE
    m_pFont = LOADFONT(NSDL_FONT_THIN, 0/*R*/, 0/*G*/, 0/*B*/);
@@ -203,10 +222,15 @@ void Game::DrawCell(int nX, int nY)
          ValueDetails eDetails;
          HexCellsGetRevealedSpotValue(m_HexCells, nX, nY, &nValue, &eDetails);
 
+         if( eDetails == Question ) {
+            strcpy(buffer, "?");
+         }
+         else {
 #ifdef _TINSPIRE
 #else
          _itoa(nValue, buffer, 10);
 #endif
+         }
 
          DRAWTEXT(m_pScreen, m_pFont, m_Metrics.GetLeftForPiece(nX, nY) + m_Metrics.GetPieceSize()/2, m_Metrics.GetTopForPiece(nX, nY) + m_Metrics.GetPieceSize()/2, buffer);
       }
@@ -309,7 +333,8 @@ void Game::DetermineClear()
 void Game::SimpleSolveStep()
 {
    int nX, nY, nAsBomb;
-   HexCellsSimpleStep(m_HexCells, &nX, &nY, &nAsBomb);
+   if( HEXCELLS_NOSTEP == HexCellsSimpleStep(m_HexCells, &nX, &nY, &nAsBomb) )
+      return;
 
    HexCellsRevealAs(m_HexCells, nX, nY, nAsBomb);
 }

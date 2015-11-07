@@ -19,6 +19,9 @@ typedef void* HexCellsLib;
 #define HEXCELLS_INCORRECT          (0)
 #define HEXCELLS_CORRECT            (1)
 
+#define HEXCELLS_SOLVESTEP          (1)
+#define HEXCELLS_NOSTEP             (0)
+
 typedef enum {
    Indicator,
    Bomb,
@@ -75,5 +78,6 @@ int HexCellsUnknownRevealAs(HexCellsLib api, int nX, int nY, int nAsBomb, ValueD
 
 int HexCellsSimpleStep(HexCellsLib api, int* pnX, int* pnY, int* pnAsBomb);
 
+int HexCellsGetIndicatorAppliableCellsCount(HexCellsLib api, int nX, int nY);
 
 #endif
